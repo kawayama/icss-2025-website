@@ -71,7 +71,6 @@ export default function Timetable() {
   const copySelectedSessions = () => {
     // 選択されたセッションをすべて取得
     const selectedSessions = sessions.filter(session => checkedSessions[session.id]);
-    console.log(selectedSessions);
     
     if (selectedSessions.length === 0) {
       alert('選択されたセッションがありません。');
@@ -124,8 +123,6 @@ export default function Timetable() {
       acc[session.date].push(session);
       return acc;
     }, {} as Record<string, Session[]>);
-
-    console.log(sessionsByDate);
     
     // 日付順にキーを取得
     const sortedDates = Object.keys(sessionsByDate).sort();
