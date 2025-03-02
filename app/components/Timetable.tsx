@@ -69,23 +69,65 @@ export default function Timetable() {
   
   // 選択されたセッションをコピー
   const copySelectedSessions = () => {
+    // 選択されたセッションをすべて取得
     const selectedSessions = sessions.filter(session => checkedSessions[session.id]);
+    console.log(selectedSessions);
     
     if (selectedSessions.length === 0) {
       alert('選択されたセッションがありません。');
       return;
     }
     
-    // 日付ごとにセッションをグループ化
-    const sessionsByDate = selectedSessions.reduce((acc, session) => {
+    // すべてのセッションを日付、時間、会場の順でソート
+    const sortedSessions = [...selectedSessions].sort((a, b) => {
+      // 1. まず日付でソート
+      if (a.date !== b.date) {
+        return a.date < b.date ? -1 : 1;
+      }
+      
+      // 2. 日付が同じなら開始時間でソート
+      const aStartMinutes = timeToMinutes(a.startTime);
+      const bStartMinutes = timeToMinutes(b.startTime);
+      
+      if (aStartMinutes !== bStartMinutes) {
+        return aStartMinutes - bStartMinutes;
+      }
+      
+      // 3. 開始時間が同じなら会場名でソート（A会場→B会場の順）
+      // 会場名に含まれるアルファベット部分を抽出して比較
+      const getVenuePrefix = (venue: string): string => {
+        // 会場名からアルファベット部分（A, B, Cなど）を抽出
+        const match = venue.match(/^([A-Za-z])会場/);
+        return match ? match[1].toUpperCase() : venue;
+      };
+
+      const aVenue = venues.find(v => v.id === a.venue || v.name === a.venue)?.name || a.venue;
+      const bVenue = venues.find(v => v.id === b.venue || v.name === b.venue)?.name || b.venue;
+      
+      const aPrefixStr = getVenuePrefix(aVenue);
+      const bPrefixStr = getVenuePrefix(bVenue);
+      
+      // まずは会場の接頭辞（A, B, Cなど）で比較
+      if (aPrefixStr !== bPrefixStr) {
+        return aPrefixStr.localeCompare(bPrefixStr);
+      }
+      
+      // 接頭辞が同じなら会場名全体で比較
+      return aVenue.localeCompare(bVenue);
+    });
+    
+    // ソート済みのセッションを日付ごとにグループ化
+    const sessionsByDate = sortedSessions.reduce((acc, session) => {
       if (!acc[session.date]) {
         acc[session.date] = [];
       }
       acc[session.date].push(session);
       return acc;
     }, {} as Record<string, Session[]>);
+
+    console.log(sessionsByDate);
     
-    // 日付順にソート
+    // 日付順にキーを取得
     const sortedDates = Object.keys(sessionsByDate).sort();
     
     // 日付ごとにセッションテキストを生成
