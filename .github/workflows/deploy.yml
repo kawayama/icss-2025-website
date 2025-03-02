@@ -38,6 +38,7 @@ jobs:
           # Automatically inject basePath in your Next.js configuration file and disable
           # server side image optimization (https://nextjs.org/docs/api-reference/next/image#unoptimized).
           static_site_generator: next
+          enablement: true
       
       - name: Build with Next.js
         run: npm run build
