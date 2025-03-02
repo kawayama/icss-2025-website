@@ -1,17 +1,46 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Session } from '../types';
 import { venues, sessions, conferenceDays } from '../data/sessions';
 import { ClipboardIcon, ArrowTopRightOnSquareIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 export default function Timetable() {
+  // 初期状態はサーバー側とクライアント側で同じになるようにする
   const [selectedDate, setSelectedDate] = useState<string>(conferenceDays[0]?.date || '');
   const [checkedSessions, setCheckedSessions] = useState<Record<string, boolean>>({});
   const [showCopySuccess, setShowCopySuccess] = useState(false);
   
+  // クライアントサイドでのみlocalStorageから読み込む
+  useEffect(() => {
+    try {
+      const storedDate = localStorage.getItem('selectedDate');
+      const storedSessions = localStorage.getItem('checkedSessions');
+      
+      if (storedDate) {
+        setSelectedDate(storedDate);
+      }
+      
+      if (storedSessions) {
+        setCheckedSessions(JSON.parse(storedSessions));
+      }
+    } catch (error) {
+      console.error('ローカルストレージからの読み込みエラー:', error);
+    }
+  }, []);
+  
   // 選択中のセッション数
   const selectedSessionCount = Object.values(checkedSessions).filter(Boolean).length;
+  
+  // 状態が変更されたらlocalStorageに保存
+  useEffect(() => {
+    try {
+      localStorage.setItem('selectedDate', selectedDate);
+      localStorage.setItem('checkedSessions', JSON.stringify(checkedSessions));
+    } catch (error) {
+      console.error('ローカルストレージへの保存エラー:', error);
+    }
+  }, [selectedDate, checkedSessions]);
   
   // セッション切り替えハンドラー
   const handleToggleSession = (sessionId: string) => {
@@ -365,10 +394,6 @@ export default function Timetable() {
             ))}
           </div>
         </div>
-        
-        {/* <div className="text-center text-gray-700 mb-2">
-          選択中の日付: <span className="font-medium">{selectedDayDisplay}</span>
-        </div> */}
       </header>
       
       {renderGridTimetable()}
@@ -376,6 +401,8 @@ export default function Timetable() {
       {/* 右下にフローティングのコピーボタン */}
       <div className="fixed bottom-6 right-6 z-30">
         <div className="relative">
+          {/* クリアボタンを削除 */}
+
           <button
             onClick={copySelectedSessions}
             disabled={selectedSessionCount === 0}
@@ -399,6 +426,7 @@ export default function Timetable() {
       
       <footer className="mt-8 text-center text-gray-600 text-sm">
         <p>© 2025 ICSS/SPT タイムテーブル | Made with ❤️ by a 暇人</p>
+        <p className="mt-1 text-xs">選択したセッションはローカルに保存されます</p>
       </footer>
     </div>
   );
